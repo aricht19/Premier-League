@@ -1,0 +1,168 @@
+install.packages("rvest")
+install.packages(("purrr"))
+
+library(rvest)
+library(purrr)
+
+remove(Catcher1)
+remove(Catcher2)
+remove(Catcher3)
+remove(temp)
+remove(temp2)
+remove(odd_indexes)
+remove(WS)
+remove(WS1)
+remove(WS2)
+
+getwd()
+setwd("C:/Users/Alex Richt/Desktop/R Codes/EPL/Teams/2019_2020")
+URL <- "https://www.transfermarkt.com/premier-league/startseite/wettbewerb/GB1"
+
+WS <- read_html(URL)
+
+URLs <- WS %>% html_nodes(".hide-for-pad .vereinprofil_tooltip") %>% html_attr("href") %>% as.character()
+
+print(URLs)
+URLs <- paste0("http://www.transfermarkt.com",URLs)
+print(URLs)
+
+##First collect by team general information
+
+Catcher1 <- data.frame( TeamName = character(), MarketValue = character(), SquadSize = character())
+
+for (i in URLs) {
+  
+  WS1 <- read_html(i)
+  MarketValue <- WS1 %>% html_nodes(".dataMarktwert a") %>% html_text() %>% as.character()
+  TeamName <- WS1 %>% html_nodes("h1") %>% html_text()
+  temp <- data.frame(TeamName, MarketValue)
+  Catcher1 <- rbind(Catcher1,temp)
+  cat("*")
+}
+
+write.table(Catcher2, file = 'EPL_Teams_2019_2020', sep = ",")
+
+##Link Player URLs to specific players in a loop wth their respective teams
+
+
+Catcher2 <- data.frame( PlayerName = character(), P_URL = character(), TeamName2 = character())
+
+for (i in URLs) {
+  
+  WS2 <- read_html(i)
+  PlayerName <- WS2 %>% html_nodes("#yw1 .spielprofil_tooltip") %>% html_text() %>% as.character()
+  P_URL <- WS2 %>% html_nodes("#yw1 .spielprofil_tooltip") %>% html_attr("href") %>% as.character()
+  TeamName2 <- WS2 %>% html_nodes( "title") %>% html_text() %>% as.character()
+  temp2 <- data.frame(PlayerName,P_URL, TeamName2)
+  Catcher2 <- rbind(Catcher2,temp2)
+  cat("*")
+}
+
+no.of.rows <- nrow(Catcher2)
+odd_indexes<-seq(1,no.of.rows,2)
+Catcher2 <- data.frame(Catcher2[odd_indexes,])
+
+Catcher2$P_URL <- paste0("http://www.transfermarkt.com",Catcher2$P_URL)
+print(Catcher2$P_URL)
+
+write.table(Catcher2, file = 'TeamRoster_2019_2020.csv', sep = ",")
+
+
+##Player & Marketvalues
+
+Catcher3 <- data.frame(PlayerName=character(), PlayerMarketValue = character(), AccumulatedTransfersSum = character())
+for (i in Catcher2$P_URL) {
+  
+  WS3 <- read_html(i)
+  PlayerMarketValue <- WS3 %>% html_nodes(".dataMarktwert a") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>% as.character()
+  AccumulatedTransfersSum <- WS3 %>% html_nodes(".show-for-small+ .rechts") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+  PlayerName <- WS3 %>% html_nodes("h1") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+  temp3 <- data.frame(PlayerName, PlayerMarketValue, AccumulatedTransfersSum)
+  Catcher3 <- rbind(Catcher3,temp3)
+  cat("*")
+}
+
+write.csv(Catcher3, file = 'EPLRosterValues_2019_2020.csv')
+
+ 
+ ##In-depth Roster
+ 
+Catcher4 <- data.frame(PlayerName=character(), PlayerMarketValue = character(), Jersey = character(), birthDate = character(), birthPlace = character(), nationality = character(), 
+height = character(), position1 = character(), position2 = character(), FullName = character(), Affiliation = character(), EPLGamesPlayed = character(),
+AccumulatedTransfersSum = character(), YouthClubs = character(), Agent = character(), Foot =  character(), Age = character(), Citizenship = character(),
+JoinedClub = character(), ContractExpiration = character(), LastExtension = character(), PlayerSponsor = character(), HighestMarketValue =  character(), CompariablePlayer = character(), NationalTeamCaps = character(), 
+MostRecentInjury =  character())
+ 
+ for (i in Catcher2$P_URL) {
+   
+   WS4 <- read_html(i)
+   PlayerMarketValue <- WS4 %>% html_nodes(".dataMarktwert a") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   AccumulatedTransfersSum <- WS4 %>% html_nodes(".show-for-small+ .rechts") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   Jersey <- WS4 %>% html_nodes("span.dataRN") %>%  html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   nationality <- WS4 %>% html_nodes("span[itemprop=nationality]") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   PlayerName <- WS4 %>% html_nodes("h1") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   EPLGamesPlayed <- WS4 %>% html_nodes(".odd:nth-child(2) .zentriert:nth-child(4)") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character() 
+   YouthClubs <- WS4 %>% html_nodes(".transferhistorie+ .box div.content") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   position1 <- WS4 %>% html_nodes(".dataDaten:nth-child(2) p:nth-child(2) .dataValue") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   FullName <- WS4 %>% html_nodes(".auflistung tr:nth-child(1) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character() 
+   birthDate <- WS4 %>% html_nodes("span[itemprop=birthDate]") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   birthPlace <- WS4 %>% html_nodes("span[itemprop=birthPlace]") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   Age <- WS4 %>% html_nodes(".auflistung tr:nth-child(4) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   height <- WS4 %>% html_nodes("span[itemprop=height]") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   Citizenship <- WS4 %>% html_nodes(".auflistung tr:nth-child(6) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   position2 <- WS4 %>% html_nodes("tr:nth-child(7) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   Foot <- WS4 %>% html_nodes(".auflistung tr:nth-child(8) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   Agent <- WS4 %>% html_nodes("tr:nth-child(9) a") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   Affiliation <- WS4 %>% html_nodes("span[itemprop=affiliation]") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   JoinedClub <- WS4 %>% html_nodes("tr:nth-child(11) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   ContractExpiration <- WS4 %>% html_nodes(".auflistung tr:nth-child(12) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   LastExtension <- WS4 %>% html_nodes("tr:nth-child(13) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   PlayerSponsor <- WS4 %>% html_nodes("tr:nth-child(14) td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   HighestMarketValue <- WS4 %>% html_nodes(".zeile-unten .right-td") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   NationalTeamCaps <- WS4 %>% html_nodes(".borderloser_odd_even_style tr:nth-child(1) td:nth-child(5)") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   MostRecentInjury <-  WS4 %>% html_nodes(".verletzungsbox , .text") %>% html_text() %>% ifelse(identical(., character(0)), NA, .) %>% as.character()
+   temp4 <- data.frame(FullName,PlayerName, Affiliation, Jersey, birthDate, birthPlace, Age, height, Citizenship, position2, Foot, Agent, JoinedClub, LastExtension, ContractExpiration, PlayerSponsor, YouthClubs, nationality, position1, EPLGamesPlayed, PlayerMarketValue,AccumulatedTransfersSum, HighestMarketValue, NationalTeamCaps, MostRecentInjury) 
+   Catcher4 <- rbind(Catcher4,temp4)
+   cat("*")
+ }
+ 
+write.csv(Catcher4, file = 'InDepthEPLRosters_2019_2020.csv')
+
+##Link MarketValue URL to the Player URLs
+
+Catcher2$P_Market_URL <- Catcher2$P_URL
+
+Catcher2$P_Market_URL <- gsub(pattern = "profil", replacement = "marktwertverlauf", Catcher2$P_URL )
+print(Catcher2$P_Market_URL)
+
+##Pull In Depth Ranking Data
+
+Catcher5 <- data.frame( PlayerName = character(), WorldRank = character(), CountryRank = character(), PremierLeagueRank = character(), PositionalRank = character(), LeagueLevel = character(),
+JoinedClub = character(), ContractUntil = character(), YearClassRank = character(), CurrentMarketValue = character() )
+
+for (i in Catcher2$P_Market_URL) {
+  
+  WS5 <- read_html(i)
+  PlayerName <- WS5 %>% html_nodes("h1") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  CurrentMarketValue <- WS5 %>% html_nodes(".dataMarktwert a") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  LeagueLevel <- WS5 %>% html_nodes(".dataValue:nth-child(6)") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  CountryRank <- WS5 %>% html_nodes(".columns:nth-child(4) .zahl") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  JoinedClub <- WS5 %>% html_nodes(".dataValue:nth-child(9)") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  ContractUnitl <- WS5 %>% html_nodes(".dataValue:nth-child(12)") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  WorldRank <- WS5 %>% html_nodes(".zahl") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  PremierLeagueRank <- WS5 %>% html_nodes(".columns:nth-child(2) .zahl") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  PositionalRank <- WS5 %>% html_nodes(".columns:nth-child(5) .zahl") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character()
+  YearClassRank <- WS5 %>% html_nodes(".columns:nth-child(6) .zahl") %>% html_text() %>% ifelse(identical(., character(0)), NA, .)  %>%  as.character() 
+  temp5 <- data.frame(PlayerName, CurrentMarketValue, LeagueLevel, JoinedClub, ContractUnitl, WorldRank, CountryRank, PremierLeagueRank, PositionalRank, YearClassRank)
+  Catcher5 <- rbind(Catcher5,temp5)
+  cat("*")
+}
+
+write.csv(Catcher5, file = 'EPLPlayerRankings_2019_2020.csv')
+
+##Link Transfer History URL to the Player URLs
+
+Catcher2$P_Market_URL <- Catcher2$P_URL
+
+Catcher2$P_TransferHistory_URL <- gsub(pattern = "profil", replacement = "transfers", Catcher2$P_URL )
+print(Catcher2$P_TransferHistory_URL)
